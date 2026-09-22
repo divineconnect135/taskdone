@@ -1,0 +1,18 @@
+{
+  "name": "taskdone",
+  "version": "1.0.0",
+  "description": "TaskDone - Vanilla JavaScript Kanban Project Management Board",
+  "main": "index.js",
+  "scripts": {
+    "dev": "tailwindcss -i ./styles/input.css -o ./styles/output.css --watch",
+    "build": "tailwindcss -i ./styles/input.css -o ./styles/output.css --minify"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.3.3",
+    "tailwindcss": "^4.3.3"
+  }
+}
