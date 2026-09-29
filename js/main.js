@@ -1,6 +1,9 @@
 "use strict";
 
-// IMPORT TASK FUNCTIONS
+// =========================
+// IMPORTS
+// =========================
+
 import {
   getTasks,
   findTask,
@@ -10,13 +13,14 @@ import {
   changeTaskStatus,
 } from "./tasks.js";
 
-// IMPORT UI
 import { renderTasks } from "./ui.js";
 
-// IMPORT DRAG AND DROP
 import { initializeDragDrop } from "./dragDrop.js";
 
+// =========================
 // DOM ELEMENTS
+// =========================
+
 const addTaskButton = document.querySelector("#add-task-btn");
 
 const taskDialog = document.querySelector("#task-dialog");
@@ -37,10 +41,16 @@ const dateFilter = document.querySelector("#date-filter");
 
 const clearFiltersButton = document.querySelector("#clear-filters-btn");
 
+// =========================
 // APPLICATION STATE
+// =========================
+
 let editingTaskId = null;
 
+// =========================
 // RENDER APPLICATION
+// =========================
+
 function render() {
   const filters = {
     search: searchInput.value,
@@ -53,14 +63,69 @@ function render() {
   renderTasks(getTasks(), filters);
 }
 
-// CLEAR FORM ERRORS
+// =========================
+// FORM ERROR HELPERS
+// =========================
+
 function clearFormError() {
   taskFormError.textContent = "";
 
   taskFormError.classList.add("hidden");
 }
 
-// OPEN ADD TASK DIALOG
+// =========================
+// GOOGLE CALENDAR
+// =========================
+
+function getGoogleCalendarDates(dueDate) {
+  const [year, month, day] = dueDate.split("-").map(Number);
+
+  const startDate = new Date(Date.UTC(year, month - 1, day));
+
+  const endDate = new Date(startDate);
+
+  // Google Calendar all-day events
+  // use an exclusive end date,
+  // so a one-day task ends the next day.
+  endDate.setUTCDate(endDate.getUTCDate() + 1);
+
+  function formatDate(date) {
+    return date.toISOString().slice(0, 10).replaceAll("-", "");
+  }
+
+  return {
+    start: formatDate(startDate),
+
+    end: formatDate(endDate),
+  };
+}
+
+function addTaskToGoogleCalendar(task) {
+  if (!task.dueDate) {
+    return;
+  }
+
+  const { start, end } = getGoogleCalendarDates(task.dueDate);
+
+  const params = new URLSearchParams({
+    action: "TEMPLATE",
+
+    text: task.title,
+
+    dates: `${start}/${end}`,
+
+    details: `${task.description}\n\nPriority: ${task.priority}`,
+  });
+
+  const calendarUrl = `https://calendar.google.com/calendar/render?${params.toString()}`;
+
+  window.open(calendarUrl, "_blank", "noopener,noreferrer");
+}
+
+// =========================
+// OPEN CREATE TASK DIALOG
+// =========================
+
 addTaskButton.addEventListener("click", () => {
   editingTaskId = null;
 
@@ -75,18 +140,23 @@ addTaskButton.addEventListener("click", () => {
   taskDialog.showModal();
 });
 
-// CANCEL BUTTON
+// =========================
+// CANCEL
+// =========================
+
 cancelTaskButton.addEventListener("click", () => {
   taskDialog.close();
 });
 
+// =========================
 // FORM SUBMISSION
+// =========================
+
 taskForm.addEventListener("submit", (event) => {
   event.preventDefault();
 
   const formData = new FormData(taskForm);
 
-  // Read form values
   const taskData = {
     title: String(formData.get("title") ?? "").trim(),
 
@@ -97,7 +167,7 @@ taskForm.addEventListener("submit", (event) => {
     dueDate: String(formData.get("dueDate") ?? ""),
   };
 
-  // Validate
+  // Validation
   if (
     !taskData.title ||
     !taskData.description ||
@@ -127,19 +197,23 @@ taskForm.addEventListener("submit", (event) => {
     addTask(taskData);
   }
 
-  // Update UI
   render();
 
-  // Close dialog
   taskDialog.close();
 });
 
-// CLEAR ERRORS WHEN USER TYPES
+// =========================
+// CLEAR FORM ERROR
+// =========================
+
 taskForm.addEventListener("input", clearFormError);
 
 taskForm.addEventListener("change", clearFormError);
 
-// RESET DIALOG WHEN CLOSED
+// =========================
+// RESET DIALOG
+// =========================
+
 taskDialog.addEventListener("close", () => {
   editingTaskId = null;
 
@@ -148,7 +222,10 @@ taskDialog.addEventListener("close", () => {
   clearFormError();
 });
 
-// EDIT AND DELETE BUTTONS
+// =========================
+// CARD ACTIONS
+// =========================
+
 kanbanBoard.addEventListener("click", (event) => {
   const button = event.target.closest("button[data-action]");
 
@@ -160,7 +237,24 @@ kanbanBoard.addEventListener("click", (event) => {
 
   const action = button.dataset.action;
 
+  // =====================
+  // GOOGLE CALENDAR
+  // =====================
+
+  if (action === "calendar") {
+    const task = findTask(taskId);
+
+    if (!task) return;
+
+    addTaskToGoogleCalendar(task);
+
+    return;
+  }
+
+  // =====================
   // DELETE TASK
+  // =====================
+
   if (action === "delete") {
     const task = findTask(taskId);
 
@@ -170,14 +264,21 @@ kanbanBoard.addEventListener("click", (event) => {
       `Are you sure you want to delete "${task.title}"?`,
     );
 
-    if (!confirmed) return;
+    if (!confirmed) {
+      return;
+    }
 
     deleteTask(taskId);
 
     render();
+
+    return;
   }
 
+  // =====================
   // EDIT TASK
+  // =====================
+
   if (action === "edit") {
     const task = findTask(taskId);
 
@@ -204,16 +305,28 @@ kanbanBoard.addEventListener("click", (event) => {
   }
 });
 
+// =========================
 // SEARCH
+// =========================
+
 searchInput.addEventListener("input", render);
 
+// =========================
 // PRIORITY FILTER
+// =========================
+
 priorityFilter.addEventListener("change", render);
 
+// =========================
 // DATE FILTER
+// =========================
+
 dateFilter.addEventListener("change", render);
 
+// =========================
 // CLEAR FILTERS
+// =========================
+
 clearFiltersButton.addEventListener("click", () => {
   searchInput.value = "";
 
@@ -224,8 +337,16 @@ clearFiltersButton.addEventListener("click", () => {
   render();
 });
 
-// INITIALIZE DRAG AND DROP
+// =========================
+// DRAG AND DROP
+// =========================
+
 initializeDragDrop(kanbanBoard, changeTaskStatus, render);
 
+// =========================
 // INITIALIZE APPLICATION
+// =========================
+
 render();
+
+console.log("TaskDone initialized successfully!");

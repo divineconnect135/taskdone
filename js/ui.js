@@ -6,11 +6,16 @@ export function createTaskCard(task) {
 
   card.className = "rounded-xl border border-slate-200 bg-white p-5 shadow-sm";
 
+  // Allow task card to be dragged
   card.draggable = true;
 
+  // Store task ID on the card
   card.dataset.taskId = String(task.id);
 
-  // Priority badge
+  // =========================
+  // PRIORITY BADGE
+  // =========================
+
   const badge = document.createElement("span");
 
   const priorityStyles = {
@@ -25,21 +30,30 @@ export function createTaskCard(task) {
 
   badge.textContent = `${task.priority} Priority`;
 
-  // Title
+  // =========================
+  // TASK TITLE
+  // =========================
+
   const title = document.createElement("h4");
 
   title.className = "mt-4 font-semibold";
 
   title.textContent = task.title;
 
-  // Description
+  // =========================
+  // DESCRIPTION
+  // =========================
+
   const description = document.createElement("p");
 
   description.className = "mt-2 text-sm text-slate-500";
 
   description.textContent = task.description;
 
-  // Due date
+  // =========================
+  // DUE DATE
+  // =========================
+
   const dueDate = document.createElement("p");
 
   dueDate.className =
@@ -47,10 +61,32 @@ export function createTaskCard(task) {
 
   dueDate.textContent = `Due: ${task.dueDate}`;
 
-  // Action container
+  // =========================
+  // ACTION BUTTONS
+  // =========================
+
   const actions = document.createElement("div");
 
-  actions.className = "mt-4 flex justify-end gap-3";
+  actions.className = "mt-4 flex flex-wrap justify-end gap-2";
+
+  // Google Calendar button
+  const calendarButton = document.createElement("button");
+
+  calendarButton.type = "button";
+
+  calendarButton.textContent = "Calendar";
+
+  calendarButton.className =
+    "rounded-lg bg-green-50 px-3 py-2 text-sm font-medium text-green-700 transition hover:bg-green-100";
+
+  calendarButton.dataset.action = "calendar";
+
+  calendarButton.dataset.id = String(task.id);
+
+  calendarButton.setAttribute(
+    "aria-label",
+    `Add ${task.title} to Google Calendar`,
+  );
 
   // Edit button
   const editButton = document.createElement("button");
@@ -60,7 +96,7 @@ export function createTaskCard(task) {
   editButton.textContent = "Edit";
 
   editButton.className =
-    "rounded-lg bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-100";
+    "rounded-lg bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700 transition hover:bg-indigo-100";
 
   editButton.dataset.action = "edit";
 
@@ -74,15 +110,18 @@ export function createTaskCard(task) {
   deleteButton.textContent = "Delete";
 
   deleteButton.className =
-    "rounded-lg bg-red-50 px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-100";
+    "rounded-lg bg-red-50 px-3 py-2 text-sm font-medium text-red-700 transition hover:bg-red-100";
 
   deleteButton.dataset.action = "delete";
 
   deleteButton.dataset.id = String(task.id);
 
-  actions.append(editButton, deleteButton);
+  actions.append(calendarButton, editButton, deleteButton);
 
-  // Status dropdown
+  // =========================
+  // STATUS DROPDOWN
+  // =========================
+
   const statusSelect = document.createElement("select");
 
   statusSelect.className =
@@ -121,13 +160,19 @@ export function createTaskCard(task) {
 
   statusSelect.value = task.status;
 
-  // Assemble card
+  // =========================
+  // ASSEMBLE CARD
+  // =========================
+
   card.append(badge, title, description, dueDate, actions, statusSelect);
 
   return card;
 }
 
-// Filter tasks
+// =========================
+// FILTER TASKS
+// =========================
+
 export function getFilteredTasks(tasks, filters) {
   const searchTerm = filters.search.trim().toLowerCase();
 
@@ -145,7 +190,10 @@ export function getFilteredTasks(tasks, filters) {
   });
 }
 
-// Update statistics
+// =========================
+// UPDATE STATISTICS
+// =========================
+
 export function updateStatistics(tasks) {
   document.querySelector("#stat-total").textContent = tasks.length;
 
@@ -158,7 +206,10 @@ export function updateStatistics(tasks) {
   });
 }
 
-// Render the Kanban board
+// =========================
+// RENDER BOARD
+// =========================
+
 export function renderTasks(tasks, filters) {
   const columns = {
     todo: document.querySelector("#todo-tasks"),
@@ -173,18 +224,17 @@ export function renderTasks(tasks, filters) {
     container.replaceChildren();
   });
 
-  // Get filtered tasks
   const filteredTasks = getFilteredTasks(tasks, filters);
 
-  // Display task cards
+  // Render cards
   filteredTasks.forEach((task) => {
     const container = columns[task.status];
 
-    if (container) {
-      const card = createTaskCard(task);
+    if (!container) return;
 
-      container.append(card);
-    }
+    const card = createTaskCard(task);
+
+    container.append(card);
   });
 
   // Empty states
@@ -204,10 +254,8 @@ export function renderTasks(tasks, filters) {
     }
   });
 
-  // Update statistics
   updateStatistics(tasks);
 
-  // Update filter count
   document.querySelector("#filter-count").textContent =
     `Showing ${filteredTasks.length} of ${tasks.length} tasks`;
 }
